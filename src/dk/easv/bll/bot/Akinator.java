@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
-public class ExampleSneakyBot implements IBot{
+public class Akinator implements IBot{
     final int moveTimeMs = 1000;
-    private String BOT_NAME = getClass().getSimpleName();
+    private final static String BOT_NAME = "Akinator";
 
     private GameSimulator createSimulator(IGameState state) {
         GameSimulator simulator = new GameSimulator(new GameState());
@@ -28,42 +28,62 @@ public class ExampleSneakyBot implements IBot{
         return calculateWinningMove(state, moveTimeMs);
     }
     // Plays single games until it wins and returns the first move for that. If iterations reached with no clear win, just return random valid move
+
     private IMove calculateWinningMove(IGameState state, int maxTimeMs){
         long time = System.currentTimeMillis();
         Random rand = new Random();
-        int count = 0;
+        List<IMove> availableMoves;
+        IMove winnerMove = null;
+        int mostWins = 0;
+
         while (System.currentTimeMillis() < time + maxTimeMs) { // check how much time has passed, stop if over maxTimeMs
             GameSimulator simulator = createSimulator(state);
             IGameState gs = simulator.getCurrentState();
-            List<IMove> moves = gs.getField().getAvailableMoves();
-            IMove randomMovePlayer = moves.get(rand.nextInt(moves.size()));
-            IMove winnerMove = randomMovePlayer;
+            availableMoves = gs.getField().getAvailableMoves();
+            winnerMove = availableMoves.get(0);
+            int player = simulator.currentPlayer;
 
-            while (simulator.getGameOver()==GameOverState.Active){ // Game not ended
-                simulator.updateGame(randomMovePlayer);
+            for (IMove move : availableMoves) {
+                int maxSimulations = 20;
+                int counter = 0;
+                int numberOfWins = 0;
 
-                // Opponent plays randomly
-                if (simulator.getGameOver()==GameOverState.Active){ // game still going
-                    moves = gs.getField().getAvailableMoves();
-                    IMove randomMoveOpponent = moves.get(rand.nextInt(moves.size()));
-                    simulator.updateGame(randomMoveOpponent);
+                while (counter < maxSimulations) {
+                    simulator = createSimulator(state);
+                    gs = simulator.getCurrentState();
+                    List<IMove> moves;
+                    IMove randomMovePlayer = move;
+
+                    while (simulator.getGameOver() == GameOverState.Active) { // Game not ended
+                        simulator.updateGame(randomMovePlayer);
+
+                        // Opponent plays randomly
+                        if (simulator.getGameOver() == GameOverState.Active) { // game still going
+                            moves = gs.getField().getAvailableMoves();
+                            IMove randomMoveOpponent = moves.get(rand.nextInt(moves.size()));
+                            simulator.updateGame(randomMoveOpponent);
+                        }
+                        if (simulator.getGameOver() == GameOverState.Active) { // game still going
+                            moves = gs.getField().getAvailableMoves();
+                            randomMovePlayer = moves.get(rand.nextInt(moves.size()));
+                        }
+                    }
+
+                    if (simulator.getGameOver() == GameOverState.Win) {
+                        if (simulator.currentPlayer != player)
+                            numberOfWins++;
+                    }
+
+                    counter++;
                 }
-                if (simulator.getGameOver()==GameOverState.Active){ // game still going
-                    moves = gs.getField().getAvailableMoves();
-                    randomMovePlayer = moves.get(rand.nextInt(moves.size()));
+                if (numberOfWins > mostWins) {
+                    mostWins = numberOfWins;
+                    winnerMove = move;
                 }
             }
-
-            if (simulator.getGameOver()==GameOverState.Win){
-                //System.out.println("Found a win, :)");
-                return winnerMove; // Hint you could maybe save multiple games and pick the best? Now it just returns at a possible victory
-            }
-            count++;
+            break;
         }
-        //System.out.println("Did not win, just doing random :¨(");
-        List<IMove> moves = state.getField().getAvailableMoves();
-        IMove randomMovePlayer = moves.get(rand.nextInt(moves.size()));
-        return randomMovePlayer; // just play randomly if solution not found
+        return winnerMove;
     }
 
     /*
