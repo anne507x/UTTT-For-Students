@@ -12,6 +12,10 @@ public class Akinator implements IBot{
     final int moveTimeMs = 1000;
     private final static String BOT_NAME = "Akinator";
 
+    /**
+     * Bot by Anne-Sofie & Maria
+     */
+
     private GameSimulator createSimulator(IGameState state) {
         GameSimulator simulator = new GameSimulator(new GameState());
         simulator.setGameOver(GameOverState.Active);
@@ -44,7 +48,7 @@ public class Akinator implements IBot{
             int player = simulator.currentPlayer;
 
             for (IMove move : availableMoves) {
-                int maxSimulations = 20;
+                int maxSimulations = 30;
                 int counter = 0;
                 int numberOfWins = 0;
 
